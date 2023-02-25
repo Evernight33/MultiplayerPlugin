@@ -57,7 +57,7 @@ AMenuSystemCharacter::AMenuSystemCharacter() :
 
 	if (OnlineSubsystem)
 	{
-		OnlineSubsystem->GetSessionInterface();
+		OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
 
 		if (GEngine)
 		{
@@ -150,7 +150,6 @@ void AMenuSystemCharacter::MoveRight(float Value)
 
 void AMenuSystemCharacter::CreateGameSession()
 {
-	// Called when pressing 1 key
 	if (OnlineSessionInterface.IsValid())
 	{
 		auto ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
@@ -158,21 +157,56 @@ void AMenuSystemCharacter::CreateGameSession()
 		{
 			OnlineSessionInterface->DestroySession(NAME_GameSession);
 		}
+
+		OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
+
+		TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+		ConfigureSessionSettings(SessionSettings);
+
+		if (GetWorld())
+		{
+			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+
+			if (LocalPlayer)
+			{
+				OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
+			}
+		}
 	}
-
-	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
-
-	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
-
-	if (GetWorld())
-	{
-		const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-		OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
-	}
-	
 }
 
 void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessfull)
 {
+	if (bWasSuccessfull)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.0f,
+				FColor::Blue,
+				FString::Printf(TEXT("Created session: %s"), *SessionName.ToString()));
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.0f,
+				FColor::Red,
+				FString(TEXT("Failed to create session")));
+		}
+	}
+}
 
+void AMenuSystemCharacter::ConfigureSessionSettings(TSharedPtr<FOnlineSessionSettings> SessionSettings)
+{
+	SessionSettings->bIsLANMatch = false;
+	SessionSettings->NumPublicConnections = 4;
+	SessionSettings->bAllowJoinInProgress = true;
+	SessionSettings->bAllowJoinViaPresence = true;
+	SessionSettings->bShouldAdvertise = true;
+	SessionSettings->bUsesPresence = true;
 }

@@ -77,5 +77,7 @@ protected:
 
 private:
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+
+	void ConfigureSessionSettings(TSharedPtr<FOnlineSessionSettings> SessionSettings);
 };
 
