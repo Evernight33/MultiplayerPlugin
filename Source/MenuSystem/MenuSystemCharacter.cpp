@@ -14,7 +14,8 @@
 // AMenuSystemCharacter
 
 AMenuSystemCharacter::AMenuSystemCharacter() :
-	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete))
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -161,7 +162,7 @@ void AMenuSystemCharacter::CreateGameSession()
 		OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate);
 
 		TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
-		ConfigureSessionSettings(SessionSettings);
+		ConfigureFindSessionSettings(SessionSettings);
 
 		if (GetWorld())
 		{
@@ -170,6 +171,28 @@ void AMenuSystemCharacter::CreateGameSession()
 			if (LocalPlayer)
 			{
 				OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
+			}
+		}
+	}
+}
+
+void  AMenuSystemCharacter::JoinGameSession()
+{
+	// Find game session
+	if (OnlineSessionInterface.IsValid())
+	{
+		OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
+
+		SessionSearch = MakeShareable(new FOnlineSessionSearch());
+		ConfigureJoinSessionSearch(SessionSearch);
+
+		if (GetWorld())
+		{
+			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+
+			if (LocalPlayer)
+			{
+				OnlineSessionInterface->FindSessions(*(LocalPlayer->GetPreferredUniqueNetId()), SessionSearch.ToSharedRef());
 			}
 		}
 	}
@@ -185,7 +208,8 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 				-1,
 				15.0f,
 				FColor::Blue,
-				FString::Printf(TEXT("Created session: %s"), *SessionName.ToString()));
+				FString::Printf(TEXT("Created session: %s"), *SessionName.ToString())
+			);
 		}
 	}
 	else
@@ -196,17 +220,47 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 				-1,
 				15.0f,
 				FColor::Red,
-				FString(TEXT("Failed to create session")));
+				FString(TEXT("Failed to create session"))
+			);
 		}
 	}
 }
 
-void AMenuSystemCharacter::ConfigureSessionSettings(TSharedPtr<FOnlineSessionSettings> SessionSettings)
+void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 {
-	SessionSettings->bIsLANMatch = false;
-	SessionSettings->NumPublicConnections = 4;
-	SessionSettings->bAllowJoinInProgress = true;
-	SessionSettings->bAllowJoinViaPresence = true;
-	SessionSettings->bShouldAdvertise = true;
-	SessionSettings->bUsesPresence = true;
+	if (SessionSearch && bWasSessionFound)
+	{
+		for (auto Result : SessionSearch->SearchResults)
+		{
+			FString Id = Result.GetSessionIdStr();
+			FString User = Result.Session.OwningUserName;
+
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.0f,
+					FColor::Cyan,
+					FString::Printf(TEXT("Id: %s, User: %s"), *Id, *User)
+				);
+			}
+		}
+	}
+}
+
+void AMenuSystemCharacter::ConfigureFindSessionSettings(TSharedPtr<FOnlineSessionSettings> pSessionSettings)
+{
+	pSessionSettings->bIsLANMatch = false;
+	pSessionSettings->NumPublicConnections = 4;
+	pSessionSettings->bAllowJoinInProgress = true;
+	pSessionSettings->bAllowJoinViaPresence = true;
+	pSessionSettings->bShouldAdvertise = true;
+	pSessionSettings->bUsesPresence = true;
+}
+
+void AMenuSystemCharacter::ConfigureJoinSessionSearch(TSharedPtr<FOnlineSessionSearch> pSessionSearch)
+{
+	pSessionSearch->MaxSearchResults = 10000;
+	pSessionSearch->bIsLanQuery = false;
+	pSessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 }
