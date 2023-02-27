@@ -211,6 +211,12 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 				FString::Printf(TEXT("Created session: %s"), *SessionName.ToString())
 			);
 		}
+
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel(FString("Game/ThirdPerson/Maps/Lobby.umap?listen"));
+		}
 	}
 	else
 	{
@@ -235,14 +241,20 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 			FString Id = Result.GetSessionIdStr();
 			FString User = Result.Session.OwningUserName;
 
-			if (GEngine)
+			FString MatchType;
+			Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
+
+			if (MatchType == FString("Free for all"))
 			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					15.0f,
-					FColor::Cyan,
-					FString::Printf(TEXT("Id: %s, User: %s"), *Id, *User)
-				);
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(
+						-1,
+						15.0f,
+						FColor::Cyan,
+						FString::Printf(TEXT("Joining match type: %s"), *MatchType)
+					);
+				}
 			}
 		}
 	}
@@ -256,6 +268,7 @@ void AMenuSystemCharacter::ConfigureFindSessionSettings(TSharedPtr<FOnlineSessio
 	pSessionSettings->bAllowJoinViaPresence = true;
 	pSessionSettings->bShouldAdvertise = true;
 	pSessionSettings->bUsesPresence = true;
+	pSessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 }
 
 void AMenuSystemCharacter::ConfigureJoinSessionSearch(TSharedPtr<FOnlineSessionSearch> pSessionSearch)
