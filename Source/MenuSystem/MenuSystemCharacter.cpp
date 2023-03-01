@@ -15,7 +15,8 @@
 
 AMenuSystemCharacter::AMenuSystemCharacter() :
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
-	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionComplete))
+	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionComplete)),
+	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -234,7 +235,7 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 
 void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 {
-	if (SessionSearch && bWasSessionFound)
+	if (SessionSearch && bWasSessionFound && OnlineSessionInterface.IsValid())
 	{
 		for (auto Result : SessionSearch->SearchResults)
 		{
@@ -255,7 +256,44 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 						FString::Printf(TEXT("Joining match type: %s"), *MatchType)
 					);
 				}
+
+				OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+
+				if (GetWorld())
+				{
+					const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+					OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result);
+				}			
 			}
+		}
+	}
+}
+
+void AMenuSystemCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (OnlineSessionInterface)
+	{
+		FString Address;
+		if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.0f,
+					FColor::Yellow,
+					FString::Printf(TEXT("Connect string: %s"), *Address)
+				);
+			}
+
+			if (GetGameInstance())
+			{
+				APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+				if (PlayerController)
+				{
+					PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+				}
+			}		
 		}
 	}
 }
