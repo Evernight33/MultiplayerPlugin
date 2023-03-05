@@ -193,7 +193,19 @@ void  AMenuSystemCharacter::JoinGameSession()
 
 			if (LocalPlayer)
 			{
-				OnlineSessionInterface->FindSessions(*(LocalPlayer->GetPreferredUniqueNetId()), SessionSearch.ToSharedRef());
+				OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
+			}
+			else
+			{
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(
+						-1,
+						15.0f,
+						FColor::Red,
+						FString::Printf(TEXT("Failed to FindSession on 196")
+					));
+				}
 			}
 		}
 	}
@@ -235,6 +247,7 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 
 void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 {
+	bool FindSession = false;
 	if (SessionSearch && bWasSessionFound && OnlineSessionInterface.IsValid())
 	{
 		for (auto Result : SessionSearch->SearchResults)
@@ -245,8 +258,19 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 			FString MatchType;
 			Result.Session.SessionSettings.Get(FName("MatchType"), MatchType);
 
-			if (MatchType == FString("Free for all"))
+			if (GEngine)
 			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.f,
+					FColor::Cyan,
+					FString::Printf(TEXT("Id: %s, User: %s"), *Id, *User)
+				);
+			}
+
+			if (MatchType == FString("FreeForAll"))
+			{
+				FindSession = true;
 				if (GEngine)
 				{
 					GEngine->AddOnScreenDebugMessage(
@@ -265,13 +289,73 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 					OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result);
 				}			
 			}
+			else
+			{
+				if (GEngine)
+				{
+					if (!SessionSearch)
+					{
+						GEngine->AddOnScreenDebugMessage(
+							-1,
+							15.0f,
+							FColor::Red,
+							FString::Printf(TEXT("Failed to Find MatchType")
+							));
+					}
+				}
+			}
+		}
+
+		if (FindSession == false)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.0f,
+				FColor::Red,
+				FString::Printf(TEXT("FindSession == false")
+				));
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			if (!SessionSearch)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.0f,
+					FColor::Red,
+					FString::Printf(TEXT("Failed to FindSession on SessionSearch")
+					));
+			}
+			
+			else if (!bWasSessionFound)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.0f,
+					FColor::Red,
+					FString::Printf(TEXT("Failed to FindSession on bWasSessionFound")
+					));
+			}
+
+			else if (!OnlineSessionInterface.IsValid())
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.0f,
+					FColor::Red,
+					FString::Printf(TEXT("Failed to FindSession on OnlineSessionInterface.IsValid()")
+					));
+			}
 		}
 	}
 }
 
 void AMenuSystemCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-	if (OnlineSessionInterface)
+	if (OnlineSessionInterface.IsValid())
 	{
 		FString Address;
 		if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
@@ -306,6 +390,7 @@ void AMenuSystemCharacter::ConfigureFindSessionSettings(TSharedPtr<FOnlineSessio
 	pSessionSettings->bAllowJoinViaPresence = true;
 	pSessionSettings->bShouldAdvertise = true;
 	pSessionSettings->bUsesPresence = true;
+	pSessionSettings->bUseLobbiesIfAvailable = true;
 	pSessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 }
 
