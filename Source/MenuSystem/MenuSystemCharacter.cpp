@@ -228,7 +228,7 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 		UWorld* World = GetWorld();
 		if (World)
 		{
-			World->ServerTravel(FString("Game/ThirdPerson/Maps/Lobby.umap?listen"));
+			World->ServerTravel(FString("Game/ThirdPerson/Maps/Lobby?listen"));
 		}
 	}
 	else
@@ -308,12 +308,15 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 
 		if (FindSession == false)
 		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.0f,
-				FColor::Red,
-				FString::Printf(TEXT("FindSession == false")
-				));
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1,
+					15.0f,
+					FColor::Red,
+					FString::Printf(TEXT("FindSession == false")
+					));
+			}
 		}
 	}
 	else
