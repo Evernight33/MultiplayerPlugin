@@ -9,7 +9,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-
+PRAGMA_DISABLE_OPTIMIZATION
 //////////////////////////////////////////////////////////////////////////
 // AMenuSystemCharacter
 
@@ -51,26 +51,6 @@ AMenuSystemCharacter::AMenuSystemCharacter() :
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
-
-	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
-
-	if (OnlineSubsystem)
-	{
-		OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
-
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.0f, 
-				FColor::Blue, 
-				FString::Printf(TEXT("Found subsystem %s"), 
-				*OnlineSubsystem->GetSubsystemName().ToString()));
-		}
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -152,7 +132,7 @@ void AMenuSystemCharacter::MoveRight(float Value)
 
 void AMenuSystemCharacter::CreateGameSession()
 {
-	if (OnlineSessionInterface.IsValid())
+	if (IsValidSessionInterface())
 	{
 		auto ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
 		if (ExistingSession)
@@ -180,7 +160,7 @@ void AMenuSystemCharacter::CreateGameSession()
 void  AMenuSystemCharacter::JoinGameSession()
 {
 	// Find game session
-	if (OnlineSessionInterface.IsValid())
+	if (IsValidSessionInterface())
 	{
 		OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
 
@@ -194,18 +174,6 @@ void  AMenuSystemCharacter::JoinGameSession()
 			if (LocalPlayer)
 			{
 				OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
-			}
-			else
-			{
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(
-						-1,
-						15.0f,
-						FColor::Red,
-						FString::Printf(TEXT("Failed to FindSession on 196")
-					));
-				}
 			}
 		}
 	}
@@ -226,9 +194,32 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 		}
 
 		UWorld* World = GetWorld();
-		if (World)
-		{
-			World->ServerTravel(FString("Game/ThirdPerson/Maps/Lobby?listen"));
+		if (World) 
+		{		
+			if (World->ServerTravel(FString("/Game/ThirdPerson/Maps/Lobby?listen")))
+			{
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(
+						-1,
+						15.0f,
+						FColor::Red,
+						FString(TEXT("Traveled successfully"))
+					);
+				}
+			}
+			else
+			{
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(
+						-1,
+						15.0f,
+						FColor::Red,
+						FString(TEXT("Travel failed"))
+					);
+				}
+			}	
 		}
 	}
 	else
@@ -247,7 +238,6 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 
 void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 {
-	bool FindSession = false;
 	if (SessionSearch && bWasSessionFound && OnlineSessionInterface.IsValid())
 	{
 		for (auto Result : SessionSearch->SearchResults)
@@ -270,7 +260,6 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 
 			if (MatchType == FString("FreeForAll"))
 			{
-				FindSession = true;
 				if (GEngine)
 				{
 					GEngine->AddOnScreenDebugMessage(
@@ -305,54 +294,6 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 				}
 			}
 		}
-
-		if (FindSession == false)
-		{
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					15.0f,
-					FColor::Red,
-					FString::Printf(TEXT("FindSession == false")
-					));
-			}
-		}
-	}
-	else
-	{
-		if (GEngine)
-		{
-			if (!SessionSearch)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					15.0f,
-					FColor::Red,
-					FString::Printf(TEXT("Failed to FindSession on SessionSearch")
-					));
-			}
-			
-			else if (!bWasSessionFound)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					15.0f,
-					FColor::Red,
-					FString::Printf(TEXT("Failed to FindSession on bWasSessionFound")
-					));
-			}
-
-			else if (!OnlineSessionInterface.IsValid())
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					15.0f,
-					FColor::Red,
-					FString::Printf(TEXT("Failed to FindSession on OnlineSessionInterface.IsValid()")
-					));
-			}
-		}
 	}
 }
 
@@ -385,6 +326,20 @@ void AMenuSystemCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessi
 	}
 }
 
+bool AMenuSystemCharacter::IsValidSessionInterface()
+{
+	if (!OnlineSessionInterface)
+	{
+		IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+		if (Subsystem)
+		{
+			OnlineSessionInterface = Subsystem->GetSessionInterface();
+		}
+	}
+
+	return OnlineSessionInterface.IsValid();
+}
+
 void AMenuSystemCharacter::ConfigureFindSessionSettings(TSharedPtr<FOnlineSessionSettings> pSessionSettings)
 {
 	pSessionSettings->bIsLANMatch = false;
@@ -403,3 +358,4 @@ void AMenuSystemCharacter::ConfigureJoinSessionSearch(TSharedPtr<FOnlineSessionS
 	pSessionSearch->bIsLanQuery = false;
 	pSessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 }
+PRAGMA_ENABLE_OPTIMIZATION

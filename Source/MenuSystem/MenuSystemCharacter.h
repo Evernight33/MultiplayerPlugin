@@ -86,7 +86,9 @@ private:
 	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
+	bool IsValidSessionInterface();
 	void ConfigureFindSessionSettings(TSharedPtr<FOnlineSessionSettings> pSessionSettings);
 	void ConfigureJoinSessionSearch(TSharedPtr<FOnlineSessionSearch> pSessionSearch);
+	
 };
 
