@@ -40,7 +40,7 @@ protected:
 
 private:
 	IOnlineSessionPtr SessionInterface;
-
+	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
 	//
 	// To add to the Online Aession Interface Delegate list
 	// We'll bind our MultiplayerSessionSubsystem internal callbacks to these
@@ -52,9 +52,11 @@ private:
 	FOnDestroySessionCompleteDelegate DestroySessionCompleteDelegate;
 	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
 
-	FDelegateHandle CreateSessionDelegateHandle;
+	FDelegateHandle CreateSessionCompleteDelegateHandle;
 	FDelegateHandle FindSessionDelegateHandle;
 	FDelegateHandle JoinSessionDelegateHandle;
 	FDelegateHandle DestroySessionDelegateHandle;
 	FDelegateHandle StartSessionDelegateHandle;
+
+	void ConfigureFindSessionSettings(int32 NumPublicConnections, FString MatchType);
 };

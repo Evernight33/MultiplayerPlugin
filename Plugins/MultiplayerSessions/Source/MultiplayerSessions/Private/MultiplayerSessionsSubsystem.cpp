@@ -3,6 +3,7 @@
 
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSubsystem.h"
+#include "OnlineSessionSettings.h"
 
 UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem()
 	: CrerateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
@@ -22,6 +23,31 @@ UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem()
 
 void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FString MatchType)
 {
+	if (SessionInterface.IsValid())
+	{
+		FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
+
+		if (ExistingSession)
+		{
+			SessionInterface->DestroySession(NAME_GameSession);
+		}
+
+		// Store the delegate in the FDelegateHandle so we can remove it later from the delegate list 
+		CreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CrerateSessionCompleteDelegate);
+
+		ConfigureFindSessionSettings(NumPublicConnections, MatchType);
+
+		if (UWorld* World = GetWorld())
+		{
+			if (const ULocalPlayer* LocalPlayer = World->GetFirstLocalPlayerFromController())
+			{
+				if (!SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *LastSessionSettings))
+				{
+					SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
+				}
+			}		
+		}
+	}
 }
 
 void UMultiplayerSessionsSubsystem::FindSessions(int32 MaxSearchResult)
@@ -58,4 +84,19 @@ void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName SessionName, 
 
 void UMultiplayerSessionsSubsystem::OnStartSessionComplete(FName SessionName, bool bWasSuccessfull)
 {
+}
+
+void UMultiplayerSessionsSubsystem::ConfigureFindSessionSettings(int32 NumPublicConnections, FString MatchType)
+{
+	LastSessionSettings = MakeShareable(new FOnlineSessionSettings());
+	if (IOnlineSubsystem::Get())
+	{
+		LastSessionSettings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+		LastSessionSettings->NumPublicConnections = NumPublicConnections;
+		LastSessionSettings->bAllowJoinInProgress = true;
+		LastSessionSettings->bAllowJoinViaPresence = true;
+		LastSessionSettings->bShouldAdvertise = true;
+		LastSessionSettings->bUsesPresence = true;
+		LastSessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);		
+	}
 }
