@@ -55,18 +55,27 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 
 void UMultiplayerSessionsSubsystem::FindSessions(int32 MaxSearchResult)
 {
+	if (SessionInterface.IsValid())
+	{
+		FindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
+
+		LastSessionSearch = MakeShareable(new FOnlineSessionSearch());
+	}
 }
 
 void UMultiplayerSessionsSubsystem::JoinSession(FOnlineSessionSearchResult& SessionResult)
 {
+	
 }
 
 void UMultiplayerSessionsSubsystem::DestroySession()
 {
+
 }
 
 void UMultiplayerSessionsSubsystem::StartSession()
 {
+
 }
 
 void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, bool bWasSuccessfull)

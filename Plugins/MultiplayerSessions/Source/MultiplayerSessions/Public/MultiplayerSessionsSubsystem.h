@@ -57,6 +57,7 @@ protected:
 private:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
+	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 
 	//
 	// To add to the Online Session Interface Delegate list
@@ -69,10 +70,10 @@ private:
 	FOnStartSessionCompleteDelegate StartSessionCompleteDelegate;
 
 	FDelegateHandle CreateSessionCompleteDelegateHandle;
-	FDelegateHandle FindSessionDelegateHandle;
-	FDelegateHandle JoinSessionDelegateHandle;
-	FDelegateHandle DestroySessionDelegateHandle;
-	FDelegateHandle StartSessionDelegateHandle;
+	FDelegateHandle FindSessionsCompleteDelegateHandle;
+	FDelegateHandle JoinSessionCompleteDelegateHandle;
+	FDelegateHandle DestroySessionCompleteDelegateHandle;
+	FDelegateHandle StartSessionCompleteDelegateHandle;
 
 	void ConfigureFindSessionSettings(int32 NumPublicConnections, FString MatchType);
 };

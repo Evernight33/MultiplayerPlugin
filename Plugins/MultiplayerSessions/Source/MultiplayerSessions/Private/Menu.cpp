@@ -118,7 +118,7 @@ void UMenu::OnFindSession(const TArray<FOnlineSessionSearchResult>& SessionResul
 
 void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
-
+	
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)
@@ -141,13 +141,9 @@ void UMenu::HostButtonClicked()
 
 void UMenu::JoinButtonClicked()
 {
-	if (GEngine)
+	if (MultiplayerSessionsSubsystem)
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			15.0f,
-			FColor::Yellow,
-			FString(TEXT("Join Button clicked")));
+		MultiplayerSessionsSubsystem->FindSessions(10000);
 	}
 }
 
