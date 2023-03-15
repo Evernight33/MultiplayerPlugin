@@ -35,7 +35,7 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 NumPublicConnections, FS
 		// Store the delegate in the FDelegateHandle so we can remove it later from the delegate list 
 		CreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CrerateSessionCompleteDelegate);
 
-		ConfigureFindSessionSettings(NumPublicConnections, MatchType);
+		ConfigureSessionSettings(NumPublicConnections, MatchType);
 
 		if (UWorld* World = GetWorld())
 		{
@@ -60,6 +60,19 @@ void UMultiplayerSessionsSubsystem::FindSessions(int32 MaxSearchResult)
 		FindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
 
 		LastSessionSearch = MakeShareable(new FOnlineSessionSearch());
+		
+		ConfigureSessionSearch(MaxSearchResult);
+		if (UWorld* World = GetWorld())
+		{
+			if (const ULocalPlayer* LocalPlayer = World->GetFirstLocalPlayerFromController())
+			{
+				if (!SessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), LastSessionSearch.ToSharedRef()))
+				{
+					SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegateHandle);
+					MultiplayerOnFindSessionsComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
+				}
+			}
+		}		
 	}
 }
 
@@ -90,6 +103,10 @@ void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName SessionName, b
 
 void UMultiplayerSessionsSubsystem::OnFindSessionComplete(bool bWasSuccessfull)
 {
+	if (SessionInterface)
+	{
+		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegateHandle);
+	}
 }
 
 void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
@@ -104,7 +121,7 @@ void UMultiplayerSessionsSubsystem::OnStartSessionComplete(FName SessionName, bo
 {
 }
 
-void UMultiplayerSessionsSubsystem::ConfigureFindSessionSettings(int32 NumPublicConnections, FString MatchType)
+void UMultiplayerSessionsSubsystem::ConfigureSessionSettings(int32 NumPublicConnections, FString MatchType)
 {
 	LastSessionSettings = MakeShareable(new FOnlineSessionSettings());
 	if (IOnlineSubsystem::Get())
@@ -116,5 +133,15 @@ void UMultiplayerSessionsSubsystem::ConfigureFindSessionSettings(int32 NumPublic
 		LastSessionSettings->bShouldAdvertise = true;
 		LastSessionSettings->bUsesPresence = true;
 		LastSessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);		
+	}
+}
+
+void UMultiplayerSessionsSubsystem::ConfigureSessionSearch(int32 MaxSearchResult)
+{
+	if (IOnlineSubsystem::Get())
+	{
+		LastSessionSearch->MaxSearchResults = MaxSearchResult;
+		LastSessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+		LastSessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 	}
 }

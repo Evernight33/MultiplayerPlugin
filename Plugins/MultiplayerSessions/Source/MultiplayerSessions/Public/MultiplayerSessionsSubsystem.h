@@ -75,5 +75,6 @@ private:
 	FDelegateHandle DestroySessionCompleteDelegateHandle;
 	FDelegateHandle StartSessionCompleteDelegateHandle;
 
-	void ConfigureFindSessionSettings(int32 NumPublicConnections, FString MatchType);
+	void ConfigureSessionSettings(int32 NumPublicConnections, FString MatchType);
+	void ConfigureSessionSearch(int32 MaxSearchResult);
 };
