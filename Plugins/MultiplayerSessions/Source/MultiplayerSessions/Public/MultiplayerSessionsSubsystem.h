@@ -51,8 +51,8 @@ protected:
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessfull);
 	void OnFindSessionComplete(bool bWasSuccessfull);
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
-	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessfull);
-	void OnStartSessionComplete(FName SessionName, bool bWasSuccessfull);
+	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+	void OnStartSessionComplete(FName SessionName, bool bWasSuccessful);
 
 private:
 	IOnlineSessionPtr SessionInterface;

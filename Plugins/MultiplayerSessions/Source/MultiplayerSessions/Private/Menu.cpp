@@ -113,7 +113,20 @@ void UMenu::OnCreateSession(bool bWasSuccessfull)
 
 void UMenu::OnFindSession(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
 {
+	if (MultiplayerSessionsSubsystem)
+	{
+		for (auto Result : SessionResults)
+		{
+			FString SettingsValue;
+			Result.Session.SessionSettings.Get(FName("MatchType"), SettingsValue);
 
+			if (SettingsValue == MatchType)
+			{
+				MultiplayerSessionsSubsystem->JoinSession(Result);
+				break;
+			}
+		}
+	}
 }
 
 void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
