@@ -75,6 +75,8 @@ private:
 	FDelegateHandle DestroySessionCompleteDelegateHandle;
 	FDelegateHandle StartSessionCompleteDelegateHandle;
 
+	bool IsValidSessionInterface();
+
 	void ConfigureSessionSettings(int32 NumPublicConnections, FString MatchType);
 	void ConfigureSessionSearch(int32 MaxSearchResult);
 };
