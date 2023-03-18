@@ -183,16 +183,6 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 {
 	if (bWasSuccessfull)
 	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.0f,
-				FColor::Blue,
-				FString::Printf(TEXT("Created session: %s"), *SessionName.ToString())
-			);
-		}
-
 		UWorld* World = GetWorld();
 		if (World) 
 		{		
@@ -219,19 +209,7 @@ void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasS
 						FString(TEXT("Travel failed"))
 					);
 				}
-			}	
-		}
-	}
-	else
-	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.0f,
-				FColor::Red,
-				FString(TEXT("Failed to create session"))
-			);
+			}
 		}
 	}
 }
@@ -276,21 +254,6 @@ void AMenuSystemCharacter::OnFindSessionComplete(bool bWasSessionFound)
 				{
 					const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 					OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result);
-				}			
-			}
-			else
-			{
-				if (GEngine)
-				{
-					if (!SessionSearch)
-					{
-						GEngine->AddOnScreenDebugMessage(
-							-1,
-							15.0f,
-							FColor::Red,
-							FString::Printf(TEXT("Failed to Find MatchType")
-							));
-					}
 				}
 			}
 		}

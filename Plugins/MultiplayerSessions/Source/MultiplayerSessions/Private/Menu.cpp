@@ -5,6 +5,7 @@
 #include "Components/Button.h"
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "OnlineSubsystem.h"
 
 void UMenu::MenuSetup(int32 pNumOfPublicConnections, FString pMatchType)
 {
@@ -131,7 +132,26 @@ void UMenu::OnFindSession(const TArray<FOnlineSessionSearchResult>& SessionResul
 
 void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
-	
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
+		if (SessionInterface)
+		{
+			FString Adress;
+			SessionInterface->GetResolvedConnectString(NAME_GameSession, Adress);
+
+			if (UGameInstance* GameInstance = GetGameInstance())
+			{
+				APlayerController* PlayerController = GameInstance->GetFirstLocalPlayerController();
+				if (PlayerController)
+				{
+					PlayerController->ClientTravel(Adress, ETravelType::TRAVEL_Absolute);
+				}
+			}
+			
+		}
+	}
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)

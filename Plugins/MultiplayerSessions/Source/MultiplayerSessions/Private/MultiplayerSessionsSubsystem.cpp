@@ -4,7 +4,7 @@
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-
+PRAGMA_DISABLE_OPTIMIZATION
 UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem()
 	: CrerateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
 	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionComplete)),
@@ -78,7 +78,29 @@ void UMultiplayerSessionsSubsystem::FindSessions(int32 MaxSearchResult)
 
 void UMultiplayerSessionsSubsystem::JoinSession(FOnlineSessionSearchResult& SessionResult)
 {
-	
+	if (SessionInterface)
+	{
+		JoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+
+		if (UWorld* World = GetWorld())
+		{
+			if (const ULocalPlayer* LocalPlayer = World->GetFirstLocalPlayerFromController())
+			{
+				if (!SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionResult))
+				{
+					SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+
+					MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+
+				}
+			}
+		}
+		
+	}
+	else
+	{
+		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+	}
 }
 
 void UMultiplayerSessionsSubsystem::DestroySession()
@@ -119,6 +141,12 @@ void UMultiplayerSessionsSubsystem::OnFindSessionComplete(bool bWasSuccessful)
 
 void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
+	if (SessionInterface)
+	{
+		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+	}
+
+	MultiplayerOnJoinSessionComplete.Broadcast(Result);
 }
 
 void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
@@ -140,6 +168,7 @@ void UMultiplayerSessionsSubsystem::ConfigureSessionSettings(int32 NumPublicConn
 		LastSessionSettings->bAllowJoinViaPresence = true;
 		LastSessionSettings->bShouldAdvertise = true;
 		LastSessionSettings->bUsesPresence = true;
+		LastSessionSettings->bUseLobbiesIfAvailable = true;
 		LastSessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);		
 	}
 }
@@ -153,3 +182,4 @@ void UMultiplayerSessionsSubsystem::ConfigureSessionSearch(int32 MaxSearchResult
 		LastSessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 	}
 }
+PRAGMA_ENABLE_OPTIMIZATION
