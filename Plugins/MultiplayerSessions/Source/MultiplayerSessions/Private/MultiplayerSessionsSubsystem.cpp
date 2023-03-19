@@ -183,7 +183,8 @@ void UMultiplayerSessionsSubsystem::ConfigureSessionSettings(int32 NumPublicConn
 		LastSessionSettings->bShouldAdvertise = true;
 		LastSessionSettings->bUsesPresence = true;
 		LastSessionSettings->bUseLobbiesIfAvailable = true;
-		LastSessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);		
+		LastSessionSettings->Set(FName("MatchType"), MatchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+		LastSessionSettings->BuildUniqueId = 1;
 	}
 }
 
