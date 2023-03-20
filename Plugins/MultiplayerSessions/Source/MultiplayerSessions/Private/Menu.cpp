@@ -93,11 +93,10 @@ void UMenu::OnCreateSession(bool bWasSuccessfull)
 				FString(TEXT("Session created successfully")));
 		}
 
-		UWorld* World = GetWorld();
-		if (World)
+		if (MultiplayerSessionsSubsystem)
 		{
-			World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
-		}
+			MultiplayerSessionsSubsystem->StartSession();
+		}	
 	}
 	else
 	{
@@ -161,7 +160,11 @@ void UMenu::OnDestroySession(bool bWasSuccessful)
 
 void UMenu::OnStartSession(bool bWasSuccessful)
 {
-
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
+	}
 }
 
 void UMenu::HostButtonClicked()
