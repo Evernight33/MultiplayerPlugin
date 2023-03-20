@@ -7,10 +7,11 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 
-void UMenu::MenuSetup(int32 pNumOfPublicConnections, FString pMatchType)
+void UMenu::MenuSetup(int32 pNumOfPublicConnections, FString pMatchType, FString LobbyPath)
 {
 	NumPublicConnections = pNumOfPublicConnections;
 	MatchType = pMatchType;
+	PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
 
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
@@ -163,7 +164,7 @@ void UMenu::OnStartSession(bool bWasSuccessful)
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		World->ServerTravel("/Game/ThirdPerson/Maps/Lobby?listen");
+		World->ServerTravel(PathToLobby);
 	}
 }
 
