@@ -56,7 +56,7 @@ private:
 	// The subsystem designed to handle all Online session functionality
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;
 
-	int32 NumPublicConnections{4};
-	FString MatchType{TEXT("FreeForAll")};
-	FString PathToLobby{ TEXT("") };
+	int32 NumPublicConnections = 4;
+	FString MatchType = TEXT("FreeForAll");
+	FString PathToLobby = TEXT("");
 };

@@ -79,4 +79,8 @@ private:
 
 	void ConfigureSessionSettings(int32 NumPublicConnections, FString MatchType);
 	void ConfigureSessionSearch(int32 MaxSearchResult);
+
+	bool bCreateSessionOnDestroy = false;
+	int32 LastNumPublicConnections;
+	FString LastMatchType;
 };
